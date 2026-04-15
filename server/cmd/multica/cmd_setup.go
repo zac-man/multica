@@ -43,7 +43,7 @@ var setupSelfHostCmd = &cobra.Command{
 	Short: "Configure the CLI for a self-hosted Multica server",
 	Long: `Configures the CLI to connect to a self-hosted Multica server.
 
-By default, connects to http://localhost:8080 (backend) and http://localhost:3000 (frontend).
+By default, connects to http://localhost:5001 (backend) and http://localhost:5002 (frontend).
 Use --server-url and --app-url to specify a custom server (e.g. an on-premise deployment).
 
 Examples:
@@ -56,8 +56,8 @@ Examples:
 func init() {
 	setupSelfHostCmd.Flags().String("server-url", "", "Backend server URL (e.g. https://api.internal.co)")
 	setupSelfHostCmd.Flags().String("app-url", "", "Frontend app URL (e.g. https://app.internal.co)")
-	setupSelfHostCmd.Flags().Int("port", 8080, "Backend server port (used when --server-url is not set)")
-	setupSelfHostCmd.Flags().Int("frontend-port", 3000, "Frontend port (used when --app-url is not set)")
+	setupSelfHostCmd.Flags().Int("port", 5001, "Backend server port (used when --server-url is not set)")
+	setupSelfHostCmd.Flags().Int("frontend-port", 5002, "Frontend port (used when --app-url is not set)")
 
 	setupCmd.AddCommand(setupCloudCmd)
 	setupCmd.AddCommand(setupSelfHostCmd)

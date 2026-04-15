@@ -32,7 +32,7 @@ function buildSetupCommand(): string {
   const apiBaseUrl = api.getBaseUrl?.() ?? "";
   const serverUrl = apiBaseUrl || appUrl;
 
-  if (!serverUrl || serverUrl === "http://localhost:8080") {
+  if (!serverUrl || serverUrl === "http://localhost:5001") {
     // Default self-host — no flags needed
     return "multica setup self-host";
   }

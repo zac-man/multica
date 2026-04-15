@@ -4,7 +4,7 @@ export interface CoreProviderProps {
   children: React.ReactNode;
   /** API base URL. Default: "" (same-origin). */
   apiBaseUrl?: string;
-  /** WebSocket URL. Default: "ws://localhost:8080/ws". */
+  /** WebSocket URL. Default: "ws://localhost:5001/ws". */
   wsUrl?: string;
   /** Storage adapter. Default: SSR-safe localStorage wrapper. */
   storage?: StorageAdapter;

@@ -12,8 +12,8 @@ POSTGRES_DB ?= multica
 POSTGRES_USER ?= multica
 POSTGRES_PASSWORD ?= multica
 POSTGRES_PORT ?= 5432
-PORT ?= 8080
-FRONTEND_PORT ?= 3000
+PORT ?= 5001
+FRONTEND_PORT ?= 5002
 FRONTEND_ORIGIN ?= http://localhost:$(FRONTEND_PORT)
 MULTICA_APP_URL ?= $(FRONTEND_ORIGIN)
 DATABASE_URL ?= postgres://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@localhost:$(POSTGRES_PORT)/$(POSTGRES_DB)?sslmode=disable
@@ -55,16 +55,16 @@ selfhost:
 	docker compose -f docker-compose.selfhost.yml up -d --build
 	@echo "==> Waiting for backend to be ready..."
 	@for i in $$(seq 1 30); do \
-		if curl -sf http://localhost:$${PORT:-8080}/health > /dev/null 2>&1; then \
+		if curl -sf http://localhost:$${PORT:-5001}/health > /dev/null 2>&1; then \
 			break; \
 		fi; \
 		sleep 2; \
 	done
-	@if curl -sf http://localhost:$${PORT:-8080}/health > /dev/null 2>&1; then \
+	@if curl -sf http://localhost:$${PORT:-5001}/health > /dev/null 2>&1; then \
 		echo ""; \
 		echo "✓ Multica is running!"; \
-		echo "  Frontend: http://localhost:$${FRONTEND_PORT:-3000}"; \
-		echo "  Backend:  http://localhost:$${PORT:-8080}"; \
+		echo "  Frontend: http://localhost:$${FRONTEND_PORT:-5002}"; \
+		echo "  Backend:  http://localhost:$${PORT:-5001}"; \
 		echo ""; \
 		echo "Log in with any email + verification code: 888888"; \
 		echo ""; \

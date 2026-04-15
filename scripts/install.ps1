@@ -239,7 +239,7 @@ function Install-Server {
     $ready = $false
     for ($i = 1; $i -le 45; $i++) {
         try {
-            $null = Invoke-WebRequest -Uri "http://localhost:8080/health" -UseBasicParsing -TimeoutSec 2
+            $null = Invoke-WebRequest -Uri "http://localhost:5001/health" -UseBasicParsing -TimeoutSec 2
             $ready = $true
             break
         } catch {
@@ -301,8 +301,8 @@ function Start-LocalInstall {
     Write-Host "  [OK] Multica server is running and CLI is ready!" -ForegroundColor Green
     Write-Host "  ============================================" -ForegroundColor Green
     Write-Host ""
-    Write-Host "  Frontend:  http://localhost:3000"
-    Write-Host "  Backend:   http://localhost:8080"
+    Write-Host "  Frontend:  http://localhost:5002"
+    Write-Host "  Backend:   http://localhost:5001"
     Write-Host "  Server at: $InstallDir"
     Write-Host ""
     Write-Host "  Next: configure your CLI to connect"

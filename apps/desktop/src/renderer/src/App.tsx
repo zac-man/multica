@@ -122,7 +122,7 @@ function AppContent() {
 
 // Backend the daemon should connect to — same URL the renderer talks to.
 const DAEMON_TARGET_API_URL =
-  import.meta.env.VITE_API_URL || "http://localhost:8080";
+  import.meta.env.VITE_API_URL || "http://localhost:5001";
 
 // On logout, clear any cached PAT and stop the daemon so that a subsequent
 // login as a different user never inherits the previous user's credentials.
@@ -143,8 +143,8 @@ export default function App() {
   return (
     <ThemeProvider>
       <CoreProvider
-        apiBaseUrl={import.meta.env.VITE_API_URL || "http://localhost:8080"}
-        wsUrl={import.meta.env.VITE_WS_URL || "ws://localhost:8080/ws"}
+        apiBaseUrl={import.meta.env.VITE_API_URL || "http://localhost:5001"}
+        wsUrl={import.meta.env.VITE_WS_URL || "ws://localhost:5001/ws"}
         onLogout={handleDaemonLogout}
       >
         <AppContent />

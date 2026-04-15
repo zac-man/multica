@@ -24,7 +24,7 @@ import (
 )
 
 var defaultOrigins = []string{
-	"http://localhost:3000", // Next.js dev
+	"http://localhost:5002", // Next.js dev
 	"http://localhost:5173", // electron-vite dev
 	"http://localhost:5174", // electron-vite dev (fallback port)
 }

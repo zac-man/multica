@@ -267,7 +267,7 @@ setup_server() {
   info "Waiting for backend to be ready..."
   local ready=false
   for i in $(seq 1 45); do
-    if curl -sf http://localhost:8080/health >/dev/null 2>&1; then
+    if curl -sf http://localhost:5001/health >/dev/null 2>&1; then
       ready=true
       break
     fi
@@ -329,8 +329,8 @@ run_with_server() {
   printf "${BOLD}${GREEN}  ✓ Multica server is running and CLI is ready!${RESET}\n"
   printf "${BOLD}${GREEN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}\n"
   printf "\n"
-  printf "  ${BOLD}Frontend:${RESET}  http://localhost:3000\n"
-  printf "  ${BOLD}Backend:${RESET}   http://localhost:8080\n"
+  printf "  ${BOLD}Frontend:${RESET}  http://localhost:5002\n"
+  printf "  ${BOLD}Backend:${RESET}   http://localhost:5001\n"
   printf "  ${BOLD}Server at:${RESET} %s\n" "$INSTALL_DIR"
   printf "\n"
   printf "  ${BOLD}Next: configure your CLI to connect${RESET}\n"
