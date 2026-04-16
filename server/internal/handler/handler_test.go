@@ -63,6 +63,10 @@ func TestMain(m *testing.M) {
 		os.Exit(1)
 	}
 
+	// Prevent inherited SELFHOST_* env from breaking send-code / verify-code tests.
+	_ = os.Unsetenv("SELFHOST_LOGIN_EMAIL")
+	_ = os.Unsetenv("SELFHOST_LOGIN_PASSWORD")
+
 	code := m.Run()
 	if err := cleanupHandlerTestFixture(context.Background(), pool); err != nil {
 		fmt.Printf("Failed to clean up handler test fixture: %v\n", err)
@@ -1101,5 +1105,120 @@ func TestDaemonRegisterMissingWorkspaceReturns404(t *testing.T) {
 	}
 	if !strings.Contains(w.Body.String(), "workspace not found") {
 		t.Fatalf("DaemonRegister: expected workspace not found error, got %s", w.Body.String())
+	}
+}
+
+func TestLoginOptionsSelfhost(t *testing.T) {
+	t.Setenv("SELFHOST_LOGIN_EMAIL", "selfhost-only@multica.ai")
+	t.Setenv("SELFHOST_LOGIN_PASSWORD", "correct-password")
+
+	w := httptest.NewRecorder()
+	req := httptest.NewRequest("GET", "/auth/login-options", nil)
+	testHandler.LoginOptions(w, req)
+	if w.Code != http.StatusOK {
+		t.Fatalf("LoginOptions: expected 200, got %d: %s", w.Code, w.Body.String())
+	}
+	var resp map[string]bool
+	if err := json.NewDecoder(w.Body).Decode(&resp); err != nil {
+		t.Fatalf("decode: %v", err)
+	}
+	if !resp["password_login"] {
+		t.Fatalf("expected password_login true, got %v", resp)
+	}
+}
+
+func TestLoginOptionsNoSelfhost(t *testing.T) {
+	t.Setenv("SELFHOST_LOGIN_EMAIL", "")
+	t.Setenv("SELFHOST_LOGIN_PASSWORD", "")
+
+	w := httptest.NewRecorder()
+	req := httptest.NewRequest("GET", "/auth/login-options", nil)
+	testHandler.LoginOptions(w, req)
+	if w.Code != http.StatusOK {
+		t.Fatalf("LoginOptions: expected 200, got %d: %s", w.Code, w.Body.String())
+	}
+	var resp map[string]bool
+	if err := json.NewDecoder(w.Body).Decode(&resp); err != nil {
+		t.Fatalf("decode: %v", err)
+	}
+	if resp["password_login"] {
+		t.Fatalf("expected password_login false, got %v", resp)
+	}
+}
+
+func TestSendCodeSelfhostForbiddenEmail(t *testing.T) {
+	const allowed = "selfhost-allowed@multica.ai"
+	t.Setenv("SELFHOST_LOGIN_EMAIL", allowed)
+	t.Setenv("SELFHOST_LOGIN_PASSWORD", "pw")
+	t.Cleanup(func() {
+		testPool.Exec(context.Background(), `DELETE FROM verification_code WHERE email = $1`, allowed)
+		testPool.Exec(context.Background(), `DELETE FROM verification_code WHERE email = $1`, "other@multica.ai")
+	})
+
+	w := httptest.NewRecorder()
+	var buf bytes.Buffer
+	json.NewEncoder(&buf).Encode(map[string]string{"email": "other@multica.ai"})
+	req := httptest.NewRequest("POST", "/auth/send-code", &buf)
+	req.Header.Set("Content-Type", "application/json")
+	testHandler.SendCode(w, req)
+	if w.Code != http.StatusForbidden {
+		t.Fatalf("SendCode: expected 403, got %d: %s", w.Code, w.Body.String())
+	}
+}
+
+func TestSendCodeSelfhostOK(t *testing.T) {
+	const email = "selfhost-allowed2@multica.ai"
+	t.Setenv("SELFHOST_LOGIN_EMAIL", email)
+	t.Setenv("SELFHOST_LOGIN_PASSWORD", "pw")
+	t.Cleanup(func() {
+		testPool.Exec(context.Background(), `DELETE FROM verification_code WHERE email = $1`, email)
+	})
+
+	w := httptest.NewRecorder()
+	var buf bytes.Buffer
+	json.NewEncoder(&buf).Encode(map[string]string{"email": email})
+	req := httptest.NewRequest("POST", "/auth/send-code", &buf)
+	req.Header.Set("Content-Type", "application/json")
+	testHandler.SendCode(w, req)
+	if w.Code != http.StatusOK {
+		t.Fatalf("SendCode: expected 200, got %d: %s", w.Code, w.Body.String())
+	}
+}
+
+func TestVerifyCodeSelfhost(t *testing.T) {
+	const email = "selfhost-user@multica.ai"
+	const password = "selfhost-secret-9"
+	t.Setenv("SELFHOST_LOGIN_EMAIL", email)
+	t.Setenv("SELFHOST_LOGIN_PASSWORD", password)
+	ctx := context.Background()
+	t.Cleanup(func() {
+		testPool.Exec(ctx, `DELETE FROM verification_code WHERE email = $1`, email)
+		testPool.Exec(ctx, `DELETE FROM "user" WHERE email = $1`, email)
+	})
+
+	var buf bytes.Buffer
+	json.NewEncoder(&buf).Encode(map[string]string{"email": email, "code": "wrong"})
+	req := httptest.NewRequest("POST", "/auth/verify-code", &buf)
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	testHandler.VerifyCode(w, req)
+	if w.Code != http.StatusBadRequest {
+		t.Fatalf("VerifyCode: expected 400 for wrong password, got %d: %s", w.Code, w.Body.String())
+	}
+
+	buf.Reset()
+	json.NewEncoder(&buf).Encode(map[string]string{"email": email, "code": password})
+	req = httptest.NewRequest("POST", "/auth/verify-code", &buf)
+	req.Header.Set("Content-Type", "application/json")
+	w = httptest.NewRecorder()
+	testHandler.VerifyCode(w, req)
+	if w.Code != http.StatusOK {
+		t.Fatalf("VerifyCode: expected 200, got %d: %s", w.Code, w.Body.String())
+	}
+
+	var login LoginResponse
+	json.NewDecoder(w.Body).Decode(&login)
+	if login.Token == "" {
+		t.Fatal("expected token")
 	}
 }

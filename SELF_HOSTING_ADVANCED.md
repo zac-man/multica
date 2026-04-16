@@ -25,6 +25,17 @@ Multica uses email-based magic link authentication via [Resend](https://resend.c
 
 > **Note:** For local/development deployments without email configured, you can use the master verification code `888888` to log in.
 
+### Single-user password (optional)
+
+For a private, single-user instance you can avoid configuring outbound email:
+
+| Variable | Description |
+|----------|-------------|
+| `SELFHOST_LOGIN_EMAIL` | Only this address may sign in (normalized to lowercase). |
+| `SELFHOST_LOGIN_PASSWORD` | Password for that account (stored in plaintext in the environment — use only on trusted hosts). |
+
+When both are set, the login UI requests `GET /auth/login-options` and shows a password step for that mode; `POST /auth/send-code` does not send email for the configured address. You can still set Resend or SMTP for other flows, but this single-user path does not depend on them.
+
 ### Google OAuth (Optional)
 
 | Variable | Description |

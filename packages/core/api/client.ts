@@ -78,6 +78,11 @@ export interface LoginResponse {
   user: User;
 }
 
+/** Public auth UI hints from GET /auth/login-options (no secrets). */
+export interface LoginOptionsResponse {
+  password_login: boolean;
+}
+
 export class ApiError extends Error {
   readonly status: number;
   readonly statusText: string;
@@ -186,6 +191,10 @@ export class ApiClient {
   }
 
   // Auth
+  async getLoginOptions(): Promise<LoginOptionsResponse> {
+    return this.fetch("/auth/login-options", { method: "GET" });
+  }
+
   async sendCode(email: string): Promise<void> {
     await this.fetch("/auth/send-code", {
       method: "POST",

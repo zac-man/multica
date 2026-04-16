@@ -107,9 +107,26 @@ export function LoginPage({
   const [loading, setLoading] = useState(false);
   const [cooldown, setCooldown] = useState(0);
   const [existingUser, setExistingUser] = useState<User | null>(null);
+  /** When true, second step uses env password (GET /auth/login-options) instead of email OTP. */
+  const [passwordLogin, setPasswordLogin] = useState(false);
   // Tracks how the existing session was detected so handleCliAuthorize
   // uses the matching token source (cookie → issueCliToken, localStorage → direct).
   const authSourceRef = useRef<"cookie" | "localStorage">("cookie");
+
+  useEffect(() => {
+    let cancelled = false;
+    api
+      .getLoginOptions()
+      .then((opts) => {
+        if (!cancelled) setPasswordLogin(opts.password_login);
+      })
+      .catch(() => {
+        if (!cancelled) setPasswordLogin(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // Check for existing session when CLI callback is present.
   // Prioritises cookie auth (= current browser session) to avoid authorising
@@ -183,7 +200,11 @@ export function LoginPage({
 
   const handleVerify = useCallback(
     async (value: string) => {
-      if (value.length !== 6) return;
+      if (passwordLogin) {
+        if (!value.trim()) return;
+      } else if (value.length !== 6) {
+        return;
+      }
       setLoading(true);
       setError("");
       try {
@@ -213,7 +234,7 @@ export function LoginPage({
         setLoading(false);
       }
     },
-    [email, onSuccess, cliCallback, onTokenObtained, qc],
+    [email, onSuccess, cliCallback, onTokenObtained, qc, passwordLogin],
   );
 
   const handleResend = async () => {
@@ -324,6 +345,77 @@ export function LoginPage({
   // -------------------------------------------------------------------------
 
   if (step === "code") {
+    if (passwordLogin) {
+      return (
+        <div className="flex min-h-svh items-center justify-center">
+          <Card className="w-full max-w-sm">
+            <CardHeader className="text-center">
+              {logo && <div className="mx-auto mb-4">{logo}</div>}
+              <CardTitle className="text-2xl">Enter password</CardTitle>
+              <CardDescription>
+                Sign in as{" "}
+                <span className="font-medium text-foreground">{email}</span>
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form
+                className="space-y-4"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  void handleVerify(code);
+                }}
+              >
+                <div className="space-y-2">
+                  <Label htmlFor="login-password">Password</Label>
+                  <Input
+                    id="login-password"
+                    type="password"
+                    autoComplete="current-password"
+                    value={code}
+                    onChange={(e) => setCode(e.target.value)}
+                    disabled={loading}
+                  />
+                </div>
+                {error && (
+                  <p className="text-sm text-destructive">{error}</p>
+                )}
+                <Button
+                  type="submit"
+                  className="w-full"
+                  size="lg"
+                  disabled={loading || !code.trim()}
+                >
+                  {loading ? "Signing in..." : "Sign in"}
+                </Button>
+              </form>
+            </CardContent>
+            <CardFooter className="flex flex-col gap-2">
+              <button
+                type="button"
+                onClick={handleResend}
+                disabled={cooldown > 0}
+                className="text-sm text-primary underline-offset-4 hover:underline disabled:text-muted-foreground disabled:no-underline disabled:cursor-not-allowed"
+              >
+                {cooldown > 0 ? `Retry in ${cooldown}s` : "Start over"}
+              </button>
+              <Button
+                type="button"
+                variant="ghost"
+                className="w-full"
+                onClick={() => {
+                  setStep("email");
+                  setCode("");
+                  setError("");
+                }}
+              >
+                Back
+              </Button>
+            </CardFooter>
+          </Card>
+        </div>
+      );
+    }
+
     return (
       <div className="flex min-h-svh items-center justify-center">
         <Card className="w-full max-w-sm">

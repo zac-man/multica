@@ -67,6 +67,8 @@ Open http://localhost:3000 in your browser. Enter any email address and use veri
 
 > This master code works in all non-production environments (i.e. when `APP_ENV` is not set to `production`). For production, configure an email provider — see [Advanced Configuration](SELF_HOSTING_ADVANCED.md#email-required-for-authentication).
 
+**Single-user deployments** can instead set `SELFHOST_LOGIN_EMAIL` and `SELFHOST_LOGIN_PASSWORD` in `.env` (see `.env.example`). Only that email address is accepted; the sign-in screen uses a password field and does not send mail for that account. Use HTTPS and treat the password as a secret.
+
 ### Step 3 — Install CLI & Start Daemon
 
 The daemon runs on your local machine (not inside Docker). It detects installed AI agent CLIs, registers them with the server, and executes tasks when agents are assigned work.

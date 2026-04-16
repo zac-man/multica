@@ -54,6 +54,9 @@ services:
       CLOUDFRONT_PRIVATE_KEY: ${CLOUDFRONT_PRIVATE_KEY:-}
       COOKIE_DOMAIN: ${COOKIE_DOMAIN:-}
       MULTICA_APP_URL: ${MULTICA_APP_URL:-http://localhost:5002}
+      # Optional: fixed account for single-user deployments (no SMTP for this email).
+      SELFHOST_LOGIN_EMAIL: ${SELFHOST_LOGIN_EMAIL:-}
+      SELFHOST_LOGIN_PASSWORD: ${SELFHOST_LOGIN_PASSWORD:-}
 
   frontend:
     build:

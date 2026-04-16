@@ -13,6 +13,7 @@ const mockApiVerifyCode = vi.hoisted(() => vi.fn());
 const mockApiSetToken = vi.hoisted(() => vi.fn());
 const mockApiGetMe = vi.hoisted(() => vi.fn());
 const mockApiIssueCliToken = vi.hoisted(() => vi.fn());
+const mockGetLoginOptions = vi.hoisted(() => vi.fn());
 const mockSetQueryData = vi.hoisted(() => vi.fn());
 
 vi.mock("@tanstack/react-query", async () => {
@@ -40,6 +41,7 @@ vi.mock("@multica/core/auth", () => ({
 
 vi.mock("@multica/core/api", () => ({
   api: {
+    getLoginOptions: mockGetLoginOptions,
     listWorkspaces: mockApiListWorkspaces,
     verifyCode: mockApiVerifyCode,
     setToken: mockApiSetToken,
@@ -75,6 +77,7 @@ describe("LoginPage", () => {
   beforeEach(() => {
     vi.useFakeTimers({ shouldAdvanceTime: true });
     vi.clearAllMocks();
+    mockGetLoginOptions.mockResolvedValue({ password_login: false });
     // Default: no existing session (getMe rejects when no auth)
     mockApiGetMe.mockRejectedValue(new Error("unauthorized"));
     localStorage.clear();

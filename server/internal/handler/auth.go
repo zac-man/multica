@@ -110,6 +110,13 @@ func (h *Handler) SendCode(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if shEmail, _, shOK := selfhostPasswordLogin(); shOK {
+		if email != shEmail {
+			writeError(w, http.StatusForbidden, "login is not allowed for this email")
+			return
+		}
+	}
+
 	// Rate limit: max 1 code per 60 seconds per email
 	latest, err := h.Queries.GetLatestCodeByEmail(r.Context(), email)
 	if err == nil && time.Since(latest.CreatedAt.Time) < 60*time.Second {
@@ -130,6 +137,13 @@ func (h *Handler) SendCode(w http.ResponseWriter, r *http.Request) {
 	})
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "failed to store verification code")
+		return
+	}
+
+	if _, _, shOK := selfhostPasswordLogin(); shOK {
+		// Single-user env password login: skip SMTP; verification uses SELFHOST_LOGIN_PASSWORD.
+		_ = h.Queries.DeleteExpiredVerificationCodes(r.Context())
+		writeJSON(w, http.StatusOK, map[string]string{"message": "Verification code sent"})
 		return
 	}
 
@@ -160,6 +174,19 @@ func (h *Handler) VerifyCode(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if shEmail, shPass, shOK := selfhostPasswordLogin(); shOK {
+		if email != shEmail {
+			writeError(w, http.StatusBadRequest, "invalid or expired code")
+			return
+		}
+		if !selfhostPasswordEqual(code, shPass) {
+			writeError(w, http.StatusBadRequest, "invalid or expired code")
+			return
+		}
+		h.completePasswordLogin(w, r, email, req.Email)
+		return
+	}
+
 	dbCode, err := h.Queries.GetLatestVerificationCode(r.Context(), email)
 	if err != nil {
 		writeError(w, http.StatusBadRequest, "invalid or expired code")
@@ -178,7 +205,11 @@ func (h *Handler) VerifyCode(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, err := h.findOrCreateUser(r.Context(), email)
+	h.completePasswordLogin(w, r, email, req.Email)
+}
+
+func (h *Handler) completePasswordLogin(w http.ResponseWriter, r *http.Request, emailNormalized, emailRaw string) {
+	user, err := h.findOrCreateUser(r.Context(), emailNormalized)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "failed to create user")
 		return
@@ -186,7 +217,7 @@ func (h *Handler) VerifyCode(w http.ResponseWriter, r *http.Request) {
 
 	tokenString, err := h.issueJWT(user)
 	if err != nil {
-		slog.Warn("login failed", append(logger.RequestAttrs(r), "error", err, "email", req.Email)...)
+		slog.Warn("login failed", append(logger.RequestAttrs(r), "error", err, "email", emailRaw)...)
 		writeError(w, http.StatusInternalServerError, "failed to generate token")
 		return
 	}
@@ -208,6 +239,12 @@ func (h *Handler) VerifyCode(w http.ResponseWriter, r *http.Request) {
 		Token: tokenString,
 		User:  userToResponse(user),
 	})
+}
+
+// LoginOptions exposes public auth UI hints (no secrets).
+func (h *Handler) LoginOptions(w http.ResponseWriter, r *http.Request) {
+	_, _, ok := selfhostPasswordLogin()
+	writeJSON(w, http.StatusOK, map[string]bool{"password_login": ok})
 }
 
 func (h *Handler) GetMe(w http.ResponseWriter, r *http.Request) {

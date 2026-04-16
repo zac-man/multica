@@ -47,6 +47,7 @@ vi.mock("@/features/auth/auth-cookie", () => ({
 // Mock api
 vi.mock("@multica/core/api", () => ({
   api: {
+    getLoginOptions: vi.fn().mockResolvedValue({ password_login: false }),
     listWorkspaces: vi.fn().mockResolvedValue([]),
     verifyCode: vi.fn(),
     setToken: vi.fn(),

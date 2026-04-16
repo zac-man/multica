@@ -1,5 +1,5 @@
 export { ApiClient, ApiError } from "./client";
-export type { ApiClientOptions } from "./client";
+export type { ApiClientOptions, LoginOptionsResponse } from "./client";
 export { WSClient } from "./ws-client";
 
 import type { ApiClient as ApiClientType } from "./client";
