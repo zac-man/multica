@@ -18,6 +18,7 @@ interface TestWorkspace {
 
 export class TestApiClient {
   private token: string | null = null;
+  private workspaceSlug: string | null = null;
   private workspaceId: string | null = null;
   private createdIssueIds: string[] = [];
 
@@ -86,11 +87,16 @@ export class TestApiClient {
     this.workspaceId = id;
   }
 
+  setWorkspaceSlug(slug: string) {
+    this.workspaceSlug = slug;
+  }
+
   async ensureWorkspace(name = "E2E Workspace", slug = "e2e-workspace") {
     const workspaces = await this.getWorkspaces();
     const workspace = workspaces.find((item) => item.slug === slug) ?? workspaces[0];
     if (workspace) {
       this.workspaceId = workspace.id;
+      this.workspaceSlug = workspace.slug;
       return workspace;
     }
 
@@ -150,7 +156,8 @@ export class TestApiClient {
       ...((init?.headers as Record<string, string>) ?? {}),
     };
     if (this.token) headers["Authorization"] = `Bearer ${this.token}`;
-    if (this.workspaceId) headers["X-Workspace-ID"] = this.workspaceId;
+    if (this.workspaceSlug) headers["X-Workspace-Slug"] = this.workspaceSlug;
+    else if (this.workspaceId) headers["X-Workspace-ID"] = this.workspaceId;
     return fetch(`${API_BASE}${path}`, { ...init, headers });
   }
 }

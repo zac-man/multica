@@ -72,3 +72,4 @@ services:
 
 volumes:
   pgdata:
+  backend_uploads:
