@@ -11,9 +11,12 @@ import {
   ChevronDown,
   ChevronLeft,
   ChevronRight,
+  Download,
+  FileText,
   Link2,
   MoreHorizontal,
   PanelRight,
+  Paperclip,
   Pin,
   PinOff,
   Plus,
@@ -60,7 +63,7 @@ import { Checkbox } from "@multica/ui/components/ui/checkbox";
 import { Command, CommandDialog, CommandInput, CommandList, CommandEmpty, CommandGroup, CommandItem } from "@multica/ui/components/ui/command";
 import { AvatarGroup, AvatarGroupCount } from "@multica/ui/components/ui/avatar";
 import { ActorAvatar } from "../../common/actor-avatar";
-import type { UpdateIssueRequest, IssueStatus, IssuePriority, TimelineEntry, Issue } from "@multica/core/types";
+import type { UpdateIssueRequest, IssueStatus, IssuePriority, TimelineEntry, Issue, Attachment } from "@multica/core/types";
 import { ALL_STATUSES, STATUS_CONFIG, PRIORITY_ORDER, PRIORITY_CONFIG } from "@multica/core/issues/config";
 import { StatusIcon, PriorityIcon, StatusPicker, PriorityPicker, DueDatePicker, AssigneePicker, canAssignAgent } from ".";
 import { ProjectPicker } from "../../projects/components/project-picker";
@@ -174,6 +177,52 @@ function PropRow({
       <span className="w-16 shrink-0 text-xs text-muted-foreground">{label}</span>
       <div className="flex min-w-0 flex-1 items-center gap-1.5 text-xs truncate">
         {children}
+      </div>
+    </div>
+  );
+}
+
+function IssueAttachmentList({
+  attachments,
+  content,
+}: {
+  attachments?: Attachment[];
+  content?: string | null;
+}) {
+  if (!attachments?.length) return null;
+
+  const standalone = content
+    ? attachments.filter((attachment) => !content.includes(attachment.url))
+    : attachments;
+  if (!standalone.length) return null;
+
+  return (
+    <div className="mt-4 rounded-xl border border-border/70 bg-muted/30 p-3">
+      <div className="mb-2 flex items-center gap-2 text-xs font-medium text-muted-foreground">
+        <Paperclip className="h-3.5 w-3.5" />
+        <span>Attachments</span>
+      </div>
+      <div className="flex flex-col gap-2">
+        {standalone.map((attachment) => (
+          <div
+            key={attachment.id}
+            className="flex items-center gap-2 rounded-md border border-border bg-background/80 px-3 py-2 transition-colors hover:bg-background"
+          >
+            <FileText className="size-4 shrink-0 text-muted-foreground" />
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm">{attachment.filename}</p>
+            </div>
+            {attachment.download_url && (
+              <button
+                type="button"
+                className="shrink-0 rounded-md p-1 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+                onClick={() => window.open(attachment.download_url, "_blank", "noopener,noreferrer")}
+              >
+                <Download className="size-3.5" />
+              </button>
+            )}
+          </div>
+        ))}
       </div>
     </div>
   );
@@ -1068,6 +1117,7 @@ export function IssueDetail({ issueId, onDelete, defaultSidebarOpen = true, layo
                 onSelect={(file) => descEditorRef.current?.uploadFile(file)}
               />
             </div>
+            <IssueAttachmentList attachments={issue.attachments} content={issue.description} />
             {descDragOver && <FileDropOverlay />}
           </div>
 
